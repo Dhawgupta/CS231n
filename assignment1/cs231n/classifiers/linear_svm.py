@@ -1,6 +1,6 @@
 import numpy as np
 from random import shuffle
-
+#d is the comment by me i.e. dhawal gupta
 def svm_loss_naive(W, X, y, reg):
   """
   Structured SVM loss function, naive implementation (with loops).
@@ -32,16 +32,21 @@ def svm_loss_naive(W, X, y, reg):
       if j == y[i]:
         continue
       margin = scores[j] - correct_class_score + 1 # note delta = 1
+      #d here we need to compute thegradient for those margin >0 as for 0 it will be 0
       if margin > 0:
         loss += margin
+        #d dW[][j]
+        dW[:,j] = dW[:,j]+ X[i].T
+        dW[:,y[i]] = dW[:,y[i]] - X[i].T
 
   # Right now the loss is a sum over all training examples, but we want it
   # to be an average instead so we divide by num_train.
   loss /= num_train
+  dW /= num_train
 
   # Add regularization to the loss.
   loss += 0.5 * reg * np.sum(W * W)
-
+  dW += W*reg
   #############################################################################
   # TODO:                                                                     #
   # Compute the gradient of the loss function and store it dW.                #
@@ -50,26 +55,48 @@ def svm_loss_naive(W, X, y, reg):
   # loss is being computed. As a result you may need to modify some of the    #
   # code above to compute the gradient.                                       #
   #############################################################################
-
+  
 
   return loss, dW
 
 
 def svm_loss_vectorized(W, X, y, reg):
+  num_train = X.shape[0]
+  num_classes = W.shape[1]
   """
   Structured SVM loss function, vectorized implementation.
 
   Inputs and outputs are the same as svm_loss_naive.
   """
   loss = 0.0
-  dW = np.zeros(W.shape) # initialize the gradient as zero
-
-  #############################################################################
+  dW = np.zeros(W.shape) # initialize the gradient as zero  #############################################################################
   # TODO:                                                                     #
   # Implement a vectorized version of the structured SVM loss, storing the    #
   # result in loss.                                                           #
   #############################################################################
-  pass
+  score = X.dot(W)
+  correct_class_score = score[:,y]
+  correct_class_score = correct_class_score[range(num_train),range(num_train)]
+  correct_class_score = np.reshape(correct_class_score , (-1,1))
+  margin = score - correct_class_score
+  margin +=1
+  loss2 = margin > 0
+  margin[~loss2] = 0
+  loss = np.sum(margin) - num_train
+  loss /= num_train
+  loss += 0.5*reg*np.sum(W*W)
+  #d uptill here is the loss implementation
+  
+  matr = np.zeros((num_train, num_classes))
+  matr[margin > 0] = 1
+  matr[range(num_train),y] = 0
+  matr[range(num_train),y] = -np.sum(matr,axis = 1)
+  dW = (X.T).dot(matr)
+  dW = dW/num_train + reg*W
+
+  return loss,dW
+
+  
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
